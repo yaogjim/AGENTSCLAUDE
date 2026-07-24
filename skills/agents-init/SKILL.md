@@ -1,0 +1,32 @@
+---
+name: agents-init
+description: 为项目接入全局 AGENTS 规范母版：访谈式收集项目信息，生成 docs/agents/project.md 与根部薄入口（AGENTS.md/CLAUDE.md），并登记到母版已接入清单。当用户要求"接入母版 / 初始化 agent 规范 / 创建 project.md / 引入 AGENTS 模板"时使用；也用于存量项目的母版版本漂移检查与升级。
+---
+
+# agents-init — 项目接入全局 AGENTS 母版
+
+母版真源目录（下称 `$MASTER`）：`/Volumes/workspace/devspace/pywork/jandarwkspace/AGENTSCLAUDE`
+
+开始前先读取 `$MASTER/AGENTS.md` 头部确认当前母版版本号，并读取 `$MASTER/project.template.md` 获取模板与薄入口样式。
+
+## 接入流程（新项目）
+
+1. **确认目标项目根目录**；检查 `docs/agents/project.md` 是否已存在——已存在则转下方「漂移检查与升级」。
+2. **访谈收集**（按母版澄清规则：常规事项分组批量提出，一次问完以下各项）：
+   - 项目一句话定位、技术栈、测试命令、运行方式；
+   - 文档现状：已有哪些 PRD / Design / Roadmap / process 文档及实际路径（没有则采用母版 §3 默认路径，映射表留空）；
+   - 任务真值源：单 owner 串行（`task/todo.md`，默认）还是多 agent 并行认领（`todos/`）；
+   - Context7 MCP 是否接入；可用的浏览器验证工具；
+   - 是否有需要偏离母版通用规则的项目特殊要求（逐条记录：覆盖哪条、改成什么、为什么）。
+3. **生成三个文件**：
+   - `docs/agents/project.md`：按模板填写；yaml 块记录 `project`、`based-on-master`（当前母版版本）、`onboarded`（今天日期）；**只写与母版默认值的差异**，无差异的小节留说明性一行即可。
+   - 根部 `AGENTS.md` 与 `CLAUDE.md`：按模板附录生成。**项目已有同名文件时，先展示现有内容并与用户确认合并方式，不得直接覆盖**；已有规则内容应迁入 project.md 的「项目覆盖规则」或相应文档。
+4. **登记**：在 `$MASTER/CLAUDE.md` 的「已接入项目」清单追加：路径 — 接入版本 — 状态。
+5. **验证与收口**：确认三个文件被 git 跟踪（不进 .gitignore）；向用户复述生效方式——全局加载 + project.md 声明优先 + 无全局环境时薄入口最低纪律兜底。
+
+## 漂移检查与升级（存量项目）
+
+1. 读项目 `docs/agents/project.md` yaml 块的 `based-on-master`，与 `$MASTER/AGENTS.md` 当前版本比对；一致则报告无漂移。
+2. 版本落后时：读 `$MASTER/AGENTS.md` §8 版本记录中两版之间的变更条目，逐条评估是否影响该项目的声明开关、路径映射或覆盖区；需要调整的先向用户说明再更新，最后刷新 `based-on-master`。
+3. 对比根部薄入口与 `$MASTER/project.template.md` 附录模板，不一致时提示更新（最低纪律条款可能随母版演进）。
+4. 旧拷贝模式项目（根部是完整母版拷贝而非薄入口）：先用 diff 找出该项目对母版的刻意适配与自增规则，迁入 project.md，再把根部文件替换为薄入口，删除项目内 `docs/agents/` 下的母版细则拷贝（保留 project.md）。整个迁移向用户逐项确认后执行。

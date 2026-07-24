@@ -1,6 +1,6 @@
 # 文档体系与质量（细则）
 
-> 母版细则文件，随 AGENTS.md 一并拷贝，无需项目适配。文档路径映射见项目 AGENTS.md §3「文档映射关系」。写 PRD / Design / Plan / Roadmap 前，先读本文件对应小节。
+> 母版细则文件，随母版全局加载生效，不拷贝到项目。文档路径映射见母版 AGENTS.md §3 默认表与项目 project.md 声明。写 PRD / Design / Plan / Roadmap 前，先读本文件对应小节。
 
 ## PRD 质量要求
 
