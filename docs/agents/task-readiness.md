@@ -28,10 +28,43 @@ Todo 是活动任务的索引、状态和执行合同，不是 PRD 或 Design �
 - 验收标准、验证方式、风险、回退和外部授权；
 - Design Readiness：`not-ready | review-required | approved`。
 
-工作包可长期存在，但不得直接编码；必须先拆成满足上述 DoR 的 S/M 纵向切片。满足验收的任务从活动清单移除，完成摘要和证据转入过程记录。
+工作包可长期存在，但不得直接编码；必须先拆成满足上述 DoR 的 S/M 纵向切片。收口方式按模式区分：**单文件模式**下，满足验收的任务从活动清单移除，完成摘要和证据转入过程记录；**分布式模式**下 todo 文件不删除，`done` 后保留作执行证据，可移入 `todos/archive/` 归档。
 
 ## 多 Agent 协调
 
 - 单文件模式下，同一时间只允许一个 owner 修改 `task/todo.md`；其他 agent 回传证据，由 owner 合并。
-- 分布式模式下，文件名使用 `T-<YYYYMMDD>-<HHMMSS>-<slug>.md`，通过 `owner + status + updated` 写盘后回读校验完成乐观锁认领。
 - 只执行自己认领的切片；共享契约、数据库迁移和有顺序依赖的任务串行，独立验证或已冻结契约后的实现才可并行。
+
+### 分布式模式的文件格式
+
+一个 todo 一个文件（多个 todo 写进同一文件必发并发冲突），文件名 `T-<YYYYMMDD>-<HHMMSS>-<slug>.md`，时间戳保证并发创建不撞 ID。顶部用 YAML front-matter 存机器可读状态，正文写人读的细节：
+
+```markdown
+---
+id: T-20260625-143052
+title: <一句话任务标题>
+status: pending        # pending | claimed | in_progress | blocked | review | done
+owner: ~               # 认领的 agent 标识；未认领为 ~
+stage: <回指 Plan/Roadmap 的阶段或功能链路环节>
+priority: P1           # P0 | P1 | P2
+depends_on: []         # 依赖的其他 todo id，全部 done 后本项才可认领
+created: 2026-06-25T14:30:52
+updated: 2026-06-25T14:30:52
+---
+
+## 背景 / 范围 / 非目标
+## 需求/设计锚点与 Design Readiness
+## 验收标准
+## 验证证据（命令、真实 API/UI/DB 场景、修复记录）
+```
+
+### 分布式认领协议（乐观锁）
+
+last-write-wins 文件系统下，用以下协议避免两个 agent 干同一件事：
+
+1. **选取**：扫描 `todos/`，只挑 `status: pending` 且 `depends_on` 全部 `done` 的项。
+2. **认领**：把 `owner` 写为自己的标识、`status` 改 `claimed`、刷新 `updated`，立即写盘。
+3. **回读校验**：写盘后重新读该文件，确认 `owner` 仍是自己；若被别的 agent 抢先，放弃并改挑下一个。
+4. **执行**：校验通过且满足上文 DoR，才置 `in_progress` 开工。
+5. **收口**：完成走 `review → done`，把验证证据写进正文；受阻置 `blocked` 并注明阻塞原因与依赖。
+6. **边界**：只改自己 `owner` 名下的 todo；要动别人的，先在正文留 note 或沟通，不直接抢占。
