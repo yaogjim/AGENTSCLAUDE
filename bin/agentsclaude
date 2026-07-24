@@ -1,0 +1,349 @@
+#!/bin/sh
+
+set -eu
+
+resolve_script_path() {
+  path=$1
+  while [ -L "$path" ]; do
+    link=$(readlink "$path")
+    case "$link" in
+      /*) path=$link ;;
+      *) path=$(dirname -- "$path")/$link ;;
+    esac
+  done
+  CDPATH='' cd -- "$(dirname -- "$path")" && pwd
+}
+
+script_dir=$(resolve_script_path "$0")
+master_dir=$(CDPATH='' cd -- "$script_dir/.." && pwd)
+user_root=${AGENTSCLAUDE_USER_ROOT:-${HOME:?HOME is required}}
+state_dir=${AGENTSCLAUDE_STATE_DIR:-$user_root/.local/state/agentsclaude}
+
+managed_begin='<!-- BEGIN AGENTSCLAUDE MANAGED BLOCK -->'
+managed_end='<!-- END AGENTSCLAUDE MANAGED BLOCK -->'
+
+fail() {
+  printf 'agentsclaude: %s\n' "$*" >&2
+  exit 1
+}
+
+validate_distribution() {
+  for required_file in \
+    AGENTS.md \
+    CLAUDE.md \
+    project.template.md \
+    VERSION \
+    skills/agents-init/SKILL.md \
+    docs/agents/decision-clarify.md \
+    docs/agents/doc-quality.md \
+    docs/agents/execution-loop.md \
+    docs/agents/task-readiness.md
+  do
+    [ -f "$master_dir/$required_file" ] || \
+      fail "incomplete distribution; missing $master_dir/$required_file"
+  done
+}
+
+preflight_link() {
+  source_path=$1
+  destination_path=$2
+  if [ -L "$destination_path" ]; then
+    [ "$(readlink "$destination_path")" = "$source_path" ] || \
+      fail "refusing to replace symlink: $destination_path"
+  elif [ -e "$destination_path" ]; then
+    fail "refusing to replace existing path: $destination_path"
+  fi
+}
+
+ensure_link() {
+  source_path=$1
+  destination_path=$2
+  [ -L "$destination_path" ] && return 0
+  mkdir -p "$(dirname -- "$destination_path")"
+  ln -s "$source_path" "$destination_path"
+}
+
+preflight_managed_file() {
+  managed_file=$1
+  [ -f "$managed_file" ] || return 0
+  if ! awk -v begin="$managed_begin" -v end="$managed_end" '
+    $0 == begin {
+      if (inside || seen_begin) invalid=1
+      inside=1
+      seen_begin=1
+      next
+    }
+    $0 == end {
+      if (!inside || seen_end) invalid=1
+      inside=0
+      seen_end=1
+      next
+    }
+    END {
+      if (inside || seen_begin != seen_end || invalid) exit 1
+    }
+  ' "$managed_file"; then
+    fail "malformed or repeated managed block in $managed_file"
+  fi
+}
+
+strip_managed_block() {
+  source_file=$1
+  output_file=$2
+  if [ ! -f "$source_file" ]; then
+    : > "$output_file"
+    return 0
+  fi
+  awk -v begin="$managed_begin" -v end="$managed_end" '
+    $0 == begin { inside=1; next }
+    $0 == end { inside=0; next }
+    !inside { print }
+  ' "$source_file" > "$output_file"
+}
+
+backup_file() {
+  source_file=$1
+  backup_name=$2
+  [ -f "$source_file" ] || return 0
+  mkdir -p "$backup_dir"
+  [ -e "$backup_dir/$backup_name" ] && return 0
+  cp -p "$source_file" "$backup_dir/$backup_name"
+}
+
+write_managed_file() {
+  managed_file=$1
+  client=$2
+  mkdir -p "$(dirname -- "$managed_file")"
+  temp_file=$(mktemp "$managed_file.tmp.XXXXXX")
+  strip_managed_block "$managed_file" "$temp_file"
+  printf '%s\n' "$managed_begin" >> "$temp_file"
+  case "$client" in
+    codex)
+      # shellcheck disable=SC2016 # Markdown code spans and $ names are literal.
+      printf '%s\n' \
+        '## AGENTS 规范母版（全局加载，唯一真源）' \
+        '' \
+        '会话开始处理任务前，先完整读取并遵循以下母版规范：' \
+        "- 母版核心：\`$master_dir/AGENTS.md\`" \
+        "- 场景细则：\`$master_dir/docs/agents/\`" \
+        '项目存在 `docs/agents/project.md` 时全量生效；否则仅遵循母版通用纪律。' \
+        >> "$temp_file"
+      ;;
+    claude)
+      printf '@%s/AGENTS.md\n' "$master_dir" >> "$temp_file"
+      ;;
+    *)
+      rm -f -- "$temp_file"
+      fail "unknown managed client: $client"
+      ;;
+  esac
+  printf '%s\n' "$managed_end" >> "$temp_file"
+  mv "$temp_file" "$managed_file"
+}
+
+install_all() {
+  install_mode=${1:-apply}
+  validate_distribution
+  cli_link=$user_root/.local/bin/agentsclaude
+  shared_skill_link=$user_root/.agents/skills/agents-init
+  claude_skill_link=$user_root/.claude/skills/agents-init
+  codex_agents=$user_root/.codex/AGENTS.md
+  claude_agents=$user_root/.claude/CLAUDE.md
+
+  preflight_link "$master_dir/bin/agentsclaude" "$cli_link"
+  preflight_link "$master_dir/skills/agents-init" "$shared_skill_link"
+  preflight_link "$master_dir/skills/agents-init" "$claude_skill_link"
+  preflight_managed_file "$codex_agents"
+  preflight_managed_file "$claude_agents"
+
+  if [ "$install_mode" = 'dry-run' ]; then
+    printf 'Would link %s to %s\n' "$cli_link" "$master_dir/bin/agentsclaude"
+    printf 'Would link %s to %s\n' "$shared_skill_link" "$master_dir/skills/agents-init"
+    printf 'Would link %s to %s\n' "$claude_skill_link" "$master_dir/skills/agents-init"
+    printf 'Would update managed blocks in %s and %s\n' "$codex_agents" "$claude_agents"
+    return 0
+  fi
+
+  timestamp=${AGENTSCLAUDE_TIMESTAMP:-$(date '+%Y%m%d-%H%M%S')}
+  backup_dir=$state_dir/backups/$timestamp
+  backup_file "$codex_agents" codex-AGENTS.md
+  backup_file "$claude_agents" claude-CLAUDE.md
+
+  ensure_link "$master_dir/bin/agentsclaude" "$cli_link"
+  ensure_link "$master_dir/skills/agents-init" "$shared_skill_link"
+  ensure_link "$master_dir/skills/agents-init" "$claude_skill_link"
+  write_managed_file "$codex_agents" codex
+  write_managed_file "$claude_agents" claude
+
+  printf 'Installed AGENTSCLAUDE from %s\n' "$master_dir"
+  printf 'Cursor uses the shared skill link; run agents-init in each project to create AGENTS.md.\n'
+}
+
+doctor_link() {
+  expected_source=$1
+  link_path=$2
+  label=$3
+  if [ -L "$link_path" ] && [ "$(readlink "$link_path")" = "$expected_source" ]; then
+    printf 'doctor: PASS %s\n' "$label"
+    return 0
+  fi
+  printf 'doctor: FAIL %s (%s)\n' "$label" "$link_path" >&2
+  return 1
+}
+
+doctor_file() {
+  file_path=$1
+  expected_text=$2
+  label=$3
+  if [ -f "$file_path" ] && \
+     grep -Fq "$managed_begin" "$file_path" && \
+     grep -Fq "$expected_text" "$file_path"; then
+    printf 'doctor: PASS %s\n' "$label"
+    return 0
+  fi
+  printf 'doctor: FAIL %s (%s)\n' "$label" "$file_path" >&2
+  return 1
+}
+
+doctor_all() {
+  status=0
+  doctor_link "$master_dir/bin/agentsclaude" "$user_root/.local/bin/agentsclaude" 'CLI link' || status=1
+  doctor_link "$master_dir/skills/agents-init" "$user_root/.agents/skills/agents-init" 'shared skill link' || status=1
+  doctor_link "$master_dir/skills/agents-init" "$user_root/.claude/skills/agents-init" 'Claude skill link' || status=1
+  doctor_file "$user_root/.codex/AGENTS.md" "$master_dir/AGENTS.md" 'Codex instructions' || status=1
+  doctor_file "$user_root/.claude/CLAUDE.md" "@$master_dir/AGENTS.md" 'Claude instructions' || status=1
+  if [ "$status" -eq 0 ]; then
+    printf 'doctor: PASS installation is healthy\n'
+  fi
+  return "$status"
+}
+
+register_project() {
+  project_path=${1:-}
+  [ -n "$project_path" ] || fail 'register requires a project directory'
+  [ -d "$project_path" ] || fail "project directory does not exist: $project_path"
+  project_path=$(CDPATH='' cd -- "$project_path" && pwd)
+  registry_file=$state_dir/projects.txt
+  mkdir -p "$state_dir"
+  touch "$registry_file"
+  chmod 600 "$registry_file"
+  if grep -Fqx "$project_path" "$registry_file"; then
+    printf 'Already registered %s\n' "$project_path"
+    return 0
+  fi
+  printf '%s\n' "$project_path" >> "$registry_file"
+  printf 'Registered %s\n' "$project_path"
+}
+
+list_projects() {
+  registry_file=$state_dir/projects.txt
+  [ -f "$registry_file" ] || return 0
+  awk 'NF && !seen[$0]++ { print }' "$registry_file"
+}
+
+preflight_owned_link() {
+  expected_source=$1
+  link_path=$2
+  if [ -L "$link_path" ]; then
+    [ "$(readlink "$link_path")" = "$expected_source" ] || \
+      fail "refusing to remove foreign symlink: $link_path"
+  elif [ -e "$link_path" ]; then
+    fail "refusing to remove non-symlink path: $link_path"
+  fi
+}
+
+remove_owned_link() {
+  expected_source=$1
+  link_path=$2
+  if [ -L "$link_path" ] && [ "$(readlink "$link_path")" = "$expected_source" ]; then
+    rm -- "$link_path"
+  fi
+}
+
+remove_managed_content() {
+  managed_file=$1
+  [ -f "$managed_file" ] || return 0
+  temp_file=$(mktemp "$managed_file.tmp.XXXXXX")
+  strip_managed_block "$managed_file" "$temp_file"
+  mv "$temp_file" "$managed_file"
+}
+
+uninstall_all() {
+  cli_link=$user_root/.local/bin/agentsclaude
+  shared_skill_link=$user_root/.agents/skills/agents-init
+  claude_skill_link=$user_root/.claude/skills/agents-init
+  codex_agents=$user_root/.codex/AGENTS.md
+  claude_agents=$user_root/.claude/CLAUDE.md
+
+  preflight_owned_link "$master_dir/bin/agentsclaude" "$cli_link"
+  preflight_owned_link "$master_dir/skills/agents-init" "$shared_skill_link"
+  preflight_owned_link "$master_dir/skills/agents-init" "$claude_skill_link"
+  preflight_managed_file "$codex_agents"
+  preflight_managed_file "$claude_agents"
+
+  timestamp=${AGENTSCLAUDE_TIMESTAMP:-$(date '+%Y%m%d-%H%M%S')}
+  backup_dir=$state_dir/backups/$timestamp-uninstall
+  backup_file "$codex_agents" codex-AGENTS.md
+  backup_file "$claude_agents" claude-CLAUDE.md
+
+  remove_owned_link "$master_dir/bin/agentsclaude" "$cli_link"
+  remove_owned_link "$master_dir/skills/agents-init" "$shared_skill_link"
+  remove_owned_link "$master_dir/skills/agents-init" "$claude_skill_link"
+  remove_managed_content "$codex_agents"
+  remove_managed_content "$claude_agents"
+
+  printf 'Removed AGENTSCLAUDE wiring; checkout, backups, and project registry were preserved.\n'
+}
+
+update_checkout() {
+  git -C "$master_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 || \
+    fail "not a Git checkout: $master_dir"
+  [ -z "$(git -C "$master_dir" status --porcelain)" ] || \
+    fail 'refusing to update a checkout with uncommitted changes'
+  branch=$(git -C "$master_dir" symbolic-ref --quiet --short HEAD 2>/dev/null) || \
+    fail 'refusing to update a detached checkout; select a branch first'
+  remote_name=${AGENTSCLAUDE_REMOTE:-origin}
+  git -C "$master_dir" remote get-url "$remote_name" >/dev/null 2>&1 || \
+    fail "missing Git remote: $remote_name"
+  git -C "$master_dir" fetch --tags "$remote_name"
+  git -C "$master_dir" rev-parse --verify "$remote_name/$branch^{commit}" >/dev/null 2>&1 || \
+    fail "remote branch does not exist: $remote_name/$branch"
+  git -C "$master_dir" merge --ff-only "$remote_name/$branch"
+  printf 'Updated AGENTSCLAUDE on branch %s\n' "$branch"
+}
+
+case "${1:-}" in
+  locate)
+    printf '%s\n' "$master_dir"
+    ;;
+  install)
+    case "${2:-}" in
+      '') install_all apply ;;
+      --dry-run) install_all dry-run ;;
+      *) fail "unknown install option: ${2:-}" ;;
+    esac
+    ;;
+  doctor)
+    doctor_all
+    ;;
+  register)
+    register_project "${2:-}"
+    ;;
+  list-projects)
+    list_projects
+    ;;
+  uninstall)
+    uninstall_all
+    ;;
+  version)
+    [ -f "$master_dir/VERSION" ] || fail "missing VERSION in $master_dir"
+    awk 'NR == 1 { print; exit }' "$master_dir/VERSION"
+    ;;
+  update)
+    update_checkout
+    ;;
+  *)
+    printf 'Usage: agentsclaude {doctor|install|list-projects|locate|register <project>|uninstall|update|version}\n' >&2
+    exit 2
+    ;;
+esac

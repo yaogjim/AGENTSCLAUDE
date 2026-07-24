@@ -6,7 +6,7 @@
 
 ```yaml
 project: <项目名>
-based-on-master: v0.5
+based-on-master: v0.6.0
 onboarded: <YYYY-MM-DD>
 ```
 
@@ -40,7 +40,10 @@ onboarded: <YYYY-MM-DD>
 # AGENTS.md（薄入口）
 
 本项目已接入全局 agent 规范母版（版本见 docs/agents/project.md）。完整规范由全局配置加载
-（Claude Code / Codex）；项目适配声明见 `docs/agents/project.md`，开工前先读取并遵循。
+（Claude Code / Codex / Cursor）；项目适配声明见 `docs/agents/project.md`，开工前先读取并遵循。
+
+若当前客户端没有加载全局母版，先运行 `agentsclaude locate`，读取返回目录中的 `AGENTS.md`
+及其指向的 `docs/agents/` 细则；命令不可用时再降级到下方最低纪律。
 
 若当前环境未加载全局母版（云端 / CI / 新机器），至少遵循以下最低纪律：
 

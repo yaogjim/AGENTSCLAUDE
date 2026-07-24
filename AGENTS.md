@@ -1,8 +1,8 @@
 # AGENTS.md — 项目协作与交付规范（通用母版）
 
-> **母版版本：v0.5（2026-07-24）**，变更记录见文末 §8。
+> **母版版本：v0.6.0（2026-07-24）**，变更记录见文末 §8。
 >
-> 本文件与 `docs/agents/` 细则是多项目共用规范的**唯一真源**，经全局配置加载（Claude Code：`~/.claude/CLAUDE.md` 导入；Codex：`~/.codex/AGENTS.md` 内的母版加载指令，纯净环境可直接软链），**不再拷贝到各项目**。新项目接入：用 `agents-init` skill（或手工按 `project.template.md`）在项目内生成 `docs/agents/project.md` 与根部薄入口，流程见母版目录 CLAUDE.md。
+> 本文件与 `docs/agents/` 细则是多项目共用规范的**唯一真源**，通过私有 GitHub 完整克隆后由 `agentsclaude` 接线到 Claude Code、Codex 与 Cursor，**不再拷贝到各项目**。新项目接入：用 `agents-init` skill（或手工按 `project.template.md`）在项目内生成 `docs/agents/project.md` 与根部薄入口，流程见母版目录 CLAUDE.md。
 
 ## 0. 生效范围（门控）
 
@@ -267,6 +267,7 @@ project.md 声明已接入 Context7、或当前环境确认该 MCP 可用时适�
 
 ## 8. 母版版本记录
 
+- **v0.6.0**（2026-07-24）：新增工具无关的跨机器发行链路——私有 GitHub 完整克隆、macOS/Linux 生命周期 CLI、Codex/Claude Code/Cursor 接线、隔离诊断与卸载、本机私有项目登记；移除 skill 对固定 `/Volumes` 路径和远程 URL 目录语义的依赖。
 - **v0.5**（2026-07-24）：分发机制从「拷贝 + 适配」改为「全局加载 + 声明式适配」——本文件不再拷贝到项目，经 `~/.claude/CLAUDE.md` 导入与 `~/.codex/AGENTS.md` 加载指令全局生效；新增 §0 生效门控（未接入项目仅通用纪律生效）；三处项目适配区改为「默认值 + project.md 声明优先」；§1 冲突优先级纳入 project.md（持久声明优先于通用规则）；新增 `project.template.md`（声明开关 + 覆盖区 + 薄入口模板）与 `agents-init` 接入 skill；适配清单从本文件移除，接入流程移至母版 CLAUDE.md。
 - **v0.4**（2026-07-24）：吸收 SmartDossier 手动版实战积累——§4 新增「自我优化循环」（教训统一沉淀 `docs/lessons.md`，会话开始先回顾）；§1 新增冲突优先级条款（安全/边界条款优先于顺带指令）；task-readiness.md 补全分布式 Todo 协议（front-matter 模板、六态状态机、六步乐观锁认领、archive 归档）；澄清规则改为折衷（常规澄清可按主题分组批量提出，重决策一次一个）；恢复「追求优雅」与「资深工程师」自审表述；execution-loop.md 补隔离测试数据要求；需求分级补「3 步以上操作」判定参考。
 - **v0.3**（2026-07-24）：拆分为核心规则 + `docs/agents/` 细则文件（decision-clarify / execution-loop / doc-quality / task-readiness）；全文去重，每条规则收敛为单一落点（简单修复说明、追踪矩阵、Todo 同步、执行触发判定等）；「决策请求的解释义务」按决策风险分两级；执行模式判定统一收敛到 §2；修正 grill skill 的环境依赖表述；新增版本头与本记录。

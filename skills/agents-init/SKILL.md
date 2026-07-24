@@ -1,13 +1,17 @@
 ---
 name: agents-init
-description: 为项目接入全局 AGENTS 规范母版：访谈式收集项目信息，生成 docs/agents/project.md 与根部薄入口（AGENTS.md/CLAUDE.md），并登记到母版已接入清单。当用户要求"接入母版 / 初始化 agent 规范 / 创建 project.md / 引入 AGENTS 模板"时使用；也用于存量项目的母版版本漂移检查与升级。
+description: 为项目接入全局 AGENTS 规范母版：访谈式收集项目信息，生成 docs/agents/project.md 与根部薄入口（AGENTS.md/CLAUDE.md），并登记到本机私有清单。当用户要求"接入母版 / 初始化 agent 规范 / 创建 project.md / 引入 AGENTS 模板"时使用；也用于存量项目的母版版本漂移检查与升级。
 ---
 
 # agents-init — 项目接入全局 AGENTS 母版
 
-母版真源目录（下称 `$MASTER`）：`/Volumes/workspace/devspace/pywork/jandarwkspace/AGENTSCLAUDE`
+## 母版定位
 
-开始前先读取 `$MASTER/AGENTS.md` 头部确认当前母版版本号，并读取 `$MASTER/project.template.md` 获取模板与薄入口样式。
+1. 先运行 `agentsclaude locate`，把返回的本地完整仓库目录作为 `$MASTER`。
+2. 验证 `$MASTER/AGENTS.md`、`$MASTER/project.template.md` 与 `$MASTER/docs/agents/` 均存在；缺一项都不得继续。
+3. 若 `agentsclaude` 不在 PATH，停止接入并提示用户先按仓库 README 完成私有 GitHub 克隆与 `agentsclaude install`。不得把 GitHub URL 当作本地目录，也不得猜测机器绝对路径。
+
+定位成功后，读取 `$MASTER/AGENTS.md` 头部确认当前母版版本号，并读取 `$MASTER/project.template.md` 获取模板与薄入口样式。
 
 ## 接入流程（新项目）
 
@@ -21,7 +25,7 @@ description: 为项目接入全局 AGENTS 规范母版：访谈式收集项目�
 3. **生成三个文件**：
    - `docs/agents/project.md`：按模板填写；yaml 块记录 `project`、`based-on-master`（当前母版版本）、`onboarded`（今天日期）；**只写与母版默认值的差异**，无差异的小节留说明性一行即可。
    - 根部 `AGENTS.md` 与 `CLAUDE.md`：按模板附录生成。**项目已有同名文件时，先展示现有内容并与用户确认合并方式，不得直接覆盖**；已有规则内容应迁入 project.md 的「项目覆盖规则」或相应文档。
-4. **登记**：在 `$MASTER/CLAUDE.md` 的「已接入项目」清单追加：路径 — 接入版本 — 状态。
+4. **本地登记**：运行 `agentsclaude register <目标项目根目录>`；登记只写入本机私有状态目录，不修改母版仓库。
 5. **验证与收口**：确认三个文件被 git 跟踪（不进 .gitignore）；向用户复述生效方式——全局加载 + project.md 声明优先 + 无全局环境时薄入口最低纪律兜底。
 
 ## 漂移检查与升级（存量项目）

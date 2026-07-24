@@ -1,0 +1,20 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  distribution:
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test lifecycle CLI
+        run: sh tests/test_agentsclaude.sh
+      - name: Test distribution contract
+        run: sh tests/test_distribution_contract.sh
