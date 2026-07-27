@@ -6,7 +6,7 @@
 
 ```yaml
 project: <项目名>
-based-on-master: v0.7.0
+based-on-master: v0.8.0
 onboarded: <YYYY-MM-DD>
 ```
 

@@ -1,6 +1,6 @@
 # CLAUDE.md（母版目录说明）
 
-本目录是多项目共用 agent 规范的**唯一真源**（v0.6.0 起采用「私有 GitHub 完整克隆 + 本地接线 + 声明式适配」分发，不再拷贝到各项目）：
+本目录是多项目共用 agent 规范的**唯一真源**（v0.8.0 起采用「公开 GitHub 匿名 HTTPS bootstrap + 本地完整克隆 + 声明式适配」分发，不再拷贝到各项目）：
 
 - `AGENTS.md` + `docs/agents/`（四个细则）：通用规范，经全局配置加载，生效于所有已接入项目。
 - `project.template.md`：项目适配声明模板（含根部薄入口模板）。
@@ -15,17 +15,15 @@
 
 - 操作系统：macOS、Linux。
 - 客户端：Codex、Claude Code、Cursor。
-- 仓库：私有 GitHub；认证由 `gh` 或 Git/SSH 管理，仓库和脚本不保存 token。
+- 仓库：公开 GitHub；默认匿名 HTTPS 克隆，不要求 GitHub CLI、账号登录、token 或 SSH Key。
 - Windows、云端 Agent 自动接线和厂商 Plugin 不在当前支持范围内。
 
 ## 全局接线（每台机器一次）
 
-1. 用 `gh repo clone` 或 SSH `git clone` 把完整仓库克隆到稳定的用户目录。
-2. 先运行 `agentsclaude install --dry-run` 检查将要创建的软链和规则块。
-3. 运行 `agentsclaude install` 完成接线；已有非本工具管理的路径会停止而不是覆盖。
-4. 运行 `agentsclaude doctor` 验证 CLI、skill 与 Codex/Claude 全局规则。
-5. Cursor 复用 `~/.agents/skills/agents-init`，项目根部薄入口通过 `agentsclaude locate` 加载完整母版。
-6. 云端 / CI / 未接线机器无全局配置时，由各项目根部薄入口的「最低纪律」条款兜底。
+1. 默认运行 README 中的公开一键 bootstrap；脚本自动检查 Git、匿名克隆完整仓库、执行 `agentsclaude install --dry-run`、`agentsclaude install` 并运行 `agentsclaude doctor`。
+2. 已有非本工具管理的路径、损坏的受管块或不完整 checkout 会明确停止，不覆盖用户内容。
+3. Cursor 复用 `~/.agents/skills/agents-init`，项目根部薄入口通过 `agentsclaude locate` 加载完整母版。
+4. 云端 / CI / 未接线机器无全局配置时，由各项目根部薄入口的「最低纪律」条款兜底。
 
 ## 新项目接入
 

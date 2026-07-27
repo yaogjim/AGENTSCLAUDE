@@ -9,7 +9,7 @@ description: 为项目接入全局 AGENTS 规范母版：访谈式收集项目�
 
 1. 先运行 `agentsclaude locate`，把返回的本地完整仓库目录作为 `$MASTER`。
 2. 验证 `$MASTER/AGENTS.md`、`$MASTER/project.template.md` 与 `$MASTER/docs/agents/` 均存在；缺一项都不得继续。
-3. 若 `agentsclaude` 不在 PATH，停止接入并提示用户先按仓库 README 完成私有 GitHub 克隆与 `agentsclaude install`。不得把 GitHub URL 当作本地目录，也不得猜测机器绝对路径。
+3. 若 `agentsclaude` 不在 PATH，停止接入并提示用户先按仓库 README 运行公开 HTTPS bootstrap；它会完成完整 Git 克隆与 `agentsclaude install`。不得把 GitHub URL 当作本地目录，也不得猜测机器绝对路径。
 
 定位成功后，读取 `$MASTER/AGENTS.md` 头部确认当前母版版本号，并读取 `$MASTER/project.template.md` 获取模板与薄入口样式。
 

@@ -14,6 +14,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Test public bootstrap installer
+        run: sh tests/test_bootstrap_install.sh
       - name: Test lifecycle CLI
         run: sh tests/test_agentsclaude.sh
       - name: Test distribution contract

@@ -1,8 +1,8 @@
 # AGENTS.md — 项目协作与交付规范（通用母版）
 
-> **母版版本：v0.7.0（2026-07-27）**，变更记录见文末 §8。
+> **母版版本：v0.8.0（2026-07-27）**，变更记录见文末 §8。
 >
-> 本文件与 `docs/agents/` 细则是多项目共用规范的**唯一真源**，通过私有 GitHub 完整克隆后由 `agentsclaude` 接线到 Claude Code、Codex 与 Cursor，**不再拷贝到各项目**。新项目接入：用 `agents-init` skill（或手工按 `project.template.md`）在项目内生成 `docs/agents/project.md` 与根部薄入口，流程见母版目录 CLAUDE.md。
+> 本文件与 `docs/agents/` 细则是多项目共用规范的**唯一真源**，通过公开 GitHub 仓库的本地完整克隆由 `agentsclaude` 接线到 Claude Code、Codex 与 Cursor，**不再拷贝到各项目**。新项目接入：用 `agents-init` skill（或手工按 `project.template.md`）在项目内生成 `docs/agents/project.md` 与根部薄入口，流程见母版目录 CLAUDE.md。
 
 ## 0. 生效范围（门控）
 
@@ -277,6 +277,7 @@ project.md 声明已接入 Context7、或当前环境确认该 MCP 可用时适�
 
 ## 8. 母版版本记录
 
+- **v0.8.0**（2026-07-27）：仓库改为公开分发；新增无需 GitHub 登录或 SSH Key 的 HTTPS 一键 bootstrap，自动完成克隆、接线预检、安装与 `doctor` 验证，并支持安全重复执行；安装文档、skill 提示与 macOS/Linux 发行测试同步改为公开仓库语义。
 - **v0.7.0**（2026-07-27）：新增实施级 Design 质量体系——显式方案/设计/架构请求在未接入项目也适用现实校准与最低质量门禁；定义关键自由裁量测试、事实分级、按适用性的设计合同、跨层一致性、正反例与客观 Design Gate；允许只读 probe/spike 先消除承重未知，同时将 Design Readiness、Todo 状态和交付状态分轴；项目模板与 `agents-init` 新增权威事实源入口，薄入口同步最低 Design 纪律，并增加跨文件契约回归。
 - **v0.6.0**（2026-07-24）：新增工具无关的跨机器发行链路——私有 GitHub 完整克隆、macOS/Linux 生命周期 CLI、Codex/Claude Code/Cursor 接线、隔离诊断与卸载、本机私有项目登记；移除 skill 对固定 `/Volumes` 路径和远程 URL 目录语义的依赖。
 - **v0.5**（2026-07-24）：分发机制从「拷贝 + 适配」改为「全局加载 + 声明式适配」——本文件不再拷贝到项目，经 `~/.claude/CLAUDE.md` 导入与 `~/.codex/AGENTS.md` 加载指令全局生效；新增 §0 生效门控（未接入项目仅通用纪律生效）；三处项目适配区改为「默认值 + project.md 声明优先」；§1 冲突优先级纳入 project.md（持久声明优先于通用规则）；新增 `project.template.md`（声明开关 + 覆盖区 + 薄入口模板）与 `agents-init` 接入 skill；适配清单从本文件移除，接入流程移至母版 CLAUDE.md。
