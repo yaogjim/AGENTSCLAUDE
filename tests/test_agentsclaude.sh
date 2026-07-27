@@ -4,6 +4,7 @@ set -eu
 
 test_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH='' cd -- "$test_dir/.." && pwd)
+expected_version=$(sed -n '1p' "$repo_root/VERSION")
 
 actual_root=$("$repo_root/bin/agentsclaude" locate)
 
@@ -139,8 +140,8 @@ fi
 printf 'PASS uninstall removes only managed wiring\n'
 
 reported_version=$("$repo_root/bin/agentsclaude" version)
-if [ "$reported_version" != 'v0.6.0' ]; then
-  printf 'FAIL version: expected v0.6.0, got %s\n' "$reported_version" >&2
+if [ "$reported_version" != "$expected_version" ]; then
+  printf 'FAIL version: expected %s, got %s\n' "$expected_version" "$reported_version" >&2
   exit 1
 fi
 

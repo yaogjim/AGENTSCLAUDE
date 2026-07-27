@@ -7,7 +7,7 @@
 - `bin/agentsclaude`：安装、升级、诊断、卸载、定位和本地项目登记入口。
 - `skills/agents-init/`：接入与漂移检查 skill，由安装器接线到各客户端的用户级 skill 目录。
 
-生效与优先级由 AGENTS.md §0/§1 定义：项目存在 `docs/agents/project.md` 才全量生效，否则仅通用纪律生效；project.md 声明优先于母版通用规则。
+生效与优先级由 AGENTS.md §0/§1 定义：项目存在 `docs/agents/project.md` 才全量生效，否则仅通用纪律生效；显式方案/设计/架构请求及缺少已批准 Design 锚点的复杂实施计划，即使在未接入项目也适用 Design 最低质量门禁，但不强制创建持久文档或任务体系；project.md 声明优先于母版通用规则。
 
 > 注意：本文件**刻意不使用** `@AGENTS.md` 引用——全局配置已导入母版，此处再引用会在本目录会话中重复注入。
 
@@ -16,7 +16,7 @@
 - 操作系统：macOS、Linux。
 - 客户端：Codex、Claude Code、Cursor。
 - 仓库：私有 GitHub；认证由 `gh` 或 Git/SSH 管理，仓库和脚本不保存 token。
-- Windows、云端 Agent 自动接线和厂商 Plugin 不在 v0.6.0 范围内。
+- Windows、云端 Agent 自动接线和厂商 Plugin 不在当前支持范围内。
 
 ## 全局接线（每台机器一次）
 
@@ -33,7 +33,7 @@
 
 ## 母版升版
 
-1. 修改 AGENTS.md / 细则后，更新 `VERSION`、头部版本号并在 §8 追加版本记录。
+1. 修改 AGENTS.md / 细则后，以 `VERSION` 为版本唯一真源，同步 AGENTS.md 头部与 §8、project.template.md、薄入口最低纪律和契约测试。
 2. 发布对应 Git tag；安装机用 `agentsclaude update` 对当前干净分支做 fast-forward 更新。
 3. 用 `agents-init` 的漂移检查逐项目评估 project.md 声明/覆盖区是否受影响，并刷新其 `based-on-master`。
 4. 已接入项目清单位于本机状态目录，可用 `agentsclaude list-projects` 查看，不写入 GitHub 仓库。

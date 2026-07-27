@@ -64,6 +64,8 @@ agentsclaude list-projects
 
 `agentsclaude update` 只更新干净、位于分支上的完整 Git checkout，并使用 `git fetch` + `git merge --ff-only`；工作区有修改、处于 detached HEAD 或远端分叉时会拒绝更新。
 
+母版升级后，对已登记项目使用 `agents-init` 做漂移检查，评估 project.md 的权威事实源入口、声明覆盖和薄入口最低纪律是否需要同步。
+
 卸载客户端接线：
 
 ```bash
@@ -74,9 +76,9 @@ agentsclaude uninstall
 
 ## 发布
 
-1. 更新 `VERSION`、`AGENTS.md` 头部版本和 §8 版本记录；
+1. 以 `VERSION` 为版本唯一真源，同步 `AGENTS.md` 头部与 §8、`project.template.md`、薄入口最低纪律和契约测试；
 2. 运行 `sh tests/test_agentsclaude.sh` 与 `sh tests/test_distribution_contract.sh`；
-3. 在 macOS/Linux CI 通过后创建同名 Git tag，例如 `v0.6.0`；
+3. 在 macOS/Linux CI 通过后创建与 `VERSION` 内容完全一致的同名 Git tag；
 4. 获得明确授权后再 commit、push 和发布 tag。
 
 ## 非目标

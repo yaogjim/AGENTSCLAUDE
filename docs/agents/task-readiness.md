@@ -8,7 +8,7 @@ Todo 是活动任务的索引、状态和执行合同，不是 PRD 或 Design �
 
 1. 指明补齐的业务目标和功能链路环节，以及预期状态变化。
 2. 链接已确认的需求条款和验收口径；业务语义无未决问题。
-3. 链接已确认的设计锚点，覆盖模块职责、数据/状态流、接口、权限、失败、幂等、并发、恢复和回退中适用的部分。
+3. `Design Readiness=approved`，链接已确认的设计锚点和 [doc-quality.md](doc-quality.md)「客观 Design Gate」结果；模块职责、数据/状态流、接口、权限、失败、幂等、并发、恢复和回退中的适用部分已闭合。
 4. 已读取当前代码、配置和测试，记录设计与代码现实的差异、复用点和预计修改文件。
 5. 依赖和外部授权已满足；未满足时保持 `pending/blocked`。
 6. 先定义可失败的语义测试、集成/E2E/浏览器/API/DB 证据和验收命令，证据对象与声明对象一致。
@@ -16,6 +16,16 @@ Todo 是活动任务的索引、状态和执行合同，不是 PRD 或 Design �
 8. 用户已审核会改变业务语义、数据模型、权限或对外契约的设计；未审核不得编码。
 
 若任一项缺失，先补需求、设计或执行切片并更新追踪矩阵。
+
+**只读取证切片例外**：为消除 `research-required` 证据缺口而建立的 probe/spike 可在 `Design Readiness=not-ready` 时进入 `in_progress`，但任务类型和范围必须明确为只读取证；不得修改功能代码、schema、持久数据、权限或对外契约。其验收对象是证据、结论、假设是否成立及 Design 更新，不是功能交付；下游实施切片仍须等待 `Design Readiness=approved`。
+
+Design Readiness、Todo 工作流状态和交付完成状态是三条独立轴：
+
+- `Design Readiness=not-ready | review-required | approved`：只描述设计能否进入实施，客观定义见 [doc-quality.md](doc-quality.md)；
+- `todo.status=pending | claimed | in_progress | blocked | review | done`：只描述任务流转；
+- `delivery_status=planned | contract-ready | implemented-not-wired | wired-not-verified | verified-partial | accepted`：只描述交付证据层级。
+
+任何记录使用状态时必须带对象或字段名，禁止用裸 `approved`、`verified`、`done` 混指不同状态。
 
 ## Todo 的最小内容
 
@@ -26,7 +36,7 @@ Todo 是活动任务的索引、状态和执行合同，不是 PRD 或 Design �
 - 需求 ID/章节链接、设计章节链接和相关 ADR；
 - 范围、非目标、代码现实、预计修改文件和复用点；
 - 验收标准、验证方式、风险、回退和外部授权；
-- Design Readiness：`not-ready | review-required | approved`。
+- Design Readiness：`not-ready | review-required | approved`；另列 `research-required` 证据缺口和阻塞决策，但不把它们当作 `todo.status` 或 `delivery_status` 枚举值。
 
 工作包可长期存在，但不得直接编码；必须先拆成满足上述 DoR 的 S/M 纵向切片。收口方式按模式区分：**单文件模式**下，满足验收的任务从活动清单移除，完成摘要和证据转入过程记录；**分布式模式**下 todo 文件不删除，`done` 后保留作执行证据，可移入 `todos/archive/` 归档。
 
