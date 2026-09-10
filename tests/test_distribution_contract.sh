@@ -59,6 +59,52 @@ assert_contains "$repo_root/AGENTS.md" '缺少 `Design Readiness=approved` 锚�
 assert_contains "$repo_root/AGENTS.md" '### 独立判断与建设主线'
 assert_contains "$repo_root/AGENTS.md" '能力是否打通、覆盖率、是否完成验收'
 assert_contains "$repo_root/AGENTS.md" '新事实、目标或优先级变化、此前分析错误'
+# Execution principles must survive master loading and thin-entry fallback.
+for required_text in \
+  '### 执行原则' \
+  '简单任务采用简单方案，优先选择最小、直接、可回退的实现。' \
+  '只解决当前明确需求，不为假设性的未来需求预先增加复杂度。' \
+  '严格遵守任务范围。未经明确要求，不得：' \
+  '新增依赖、抽象层、兼容逻辑或迁移脚本；' \
+  '增加与当前风险无关的流程、门禁或防御机制；' \
+  '重构无关代码；' \
+  '修复范围外的问题；' \
+  '扩大功能或改动范围。' \
+  '验证强度应与变更风险相匹配，只执行满足验收标准所必需的检查；不得进行无明确收益的重复测试、全面验证或额外分析。' \
+  '发现范围外的问题时，只报告，不处理。' \
+  '满足验收标准后立即停止，不进行额外优化、扩展或清理。' \
+  '### 越界处理' \
+  '如果完成任务确实必须超出既定范围，先暂停并说明：' \
+  '为什么无法在当前范围内完成；' \
+  '必须增加哪些改动；' \
+  '最小可行方案及其影响。' \
+  '获得确认后再继续。' \
+  '§1 执行原则、越界处理与提交纪律' \
+  '母版及细则中的规划、重构、验证和收口要求均受本节约束'
+do
+  assert_contains "$repo_root/AGENTS.md" "$required_text"
+done
+for required_text in \
+  '最小、直接、可回退' \
+  '假设性的未来需求' \
+  '未经明确要求' \
+  '依赖、抽象层、兼容逻辑或迁移脚本' \
+  '与当前风险无关的流程、门禁或防御机制' \
+  '范围外的问题只报告、不处理' \
+  '验证强度与变更风险相匹配' \
+  '无明确收益的重复测试、全面验证或额外分析' \
+  '满足验收标准后立即停止' \
+  '为什么无法在当前范围内完成、必须增加哪些改动、最小可行方案及其影响'
+do
+  assert_contains "$repo_root/project.template.md" "$required_text"
+done
+assert_contains "$repo_root/docs/agents/execution-loop.md" 'AGENTS.md §1「执行原则」与「越界处理」'
+assert_contains "$repo_root/docs/agents/execution-loop.md" '满足验收标准后立即停止'
+assert_not_contains "$repo_root/AGENTS.md" '**提交前运行完整套件**'
+assert_not_contains "$repo_root/AGENTS.md" '主动修复未通过的 CI 测试'
+assert_not_contains "$repo_root/AGENTS.md" '基于当前全部信息重写优雅的解决方案'
+assert_not_contains "$repo_root/docs/agents/execution-loop.md" '显著扩大工作范围'
+
 assert_contains "$repo_root/docs/agents/doc-quality.md" '### 实施级设计合同（按适用性）'
 assert_contains "$repo_root/docs/agents/doc-quality.md" 'evidence_status=verified'
 assert_contains "$repo_root/docs/agents/doc-quality.md" 'gap_type=fact-gap'
